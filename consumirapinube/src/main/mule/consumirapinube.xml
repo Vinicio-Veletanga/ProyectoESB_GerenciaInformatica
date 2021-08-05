@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xml-module="http://www.mulesoft.org/schema/mule/xml-module" xmlns:java="http://www.mulesoft.org/schema/mule/java"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:ejemplo="http://www.mulesoft.org/schema/mule/ejemplo" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ejemplo http://www.mulesoft.org/schema/mule/ejemplo/current/mule-ejemplo.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd
+http://www.mulesoft.org/schema/mule/xml-module http://www.mulesoft.org/schema/mule/xml-module/current/mule-xml-module.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="2a1574e3-ffd6-4833-b27f-f167aa44a858" basePath="/">
+		<http:listener-connection host="0.0.0.0" port="8081"/>
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="a88e5cfc-050a-4178-b11d-e598f1126474" basePath="//mocking/api/v1/sources/exchange/assets/90d40aac-d1d0-45ea-9761-35b50927047a/ejemplo/1.0.3/m/flights/%7B2343242%7D">
+		<http:request-connection host="anypoint.mulesoft.com" port="80" />
+	</http:request-config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web_Service_Consumer_Config" doc:id="3c57e4d0-84bb-448b-bafc-67ba1dadf6fe" >
+		<wsc:connection wsdlLocation="http://127.0.0.1:8000/soap/?wsdl" service="SoapService" port="Application" address="http://127.0.0.1:8000/soap/"/>
+	</wsc:config>
+	<xml-module:config name="XML_Config" doc:name="XML Config" doc:id="5a7f6a29-a1f9-4d6f-bf05-8e665fb32c3c" expandEntities="ALL" />
+	<http:request-config name="HTTP_Request_configuration1" doc:name="HTTP Request configuration" doc:id="3a8dbef9-05cd-420a-9932-d2fcdc1cd1af">
+		<http:request-connection host="127.0.0.1" port="8000" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration2" doc:name="HTTP Request configuration" doc:id="61e4ed17-6165-47bd-a734-3de235974d37" basePath="/dep_ret/" >
+		<http:request-connection host="127.0.0.1" port="8000" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration3" doc:name="HTTP Request configuration" doc:id="7d931647-025c-41c4-9896-6a2d7048f7f9" >
+		<http:request-connection host="127.0.0.1" port="8000" />
+	</http:request-config>
+	<flow name="consumirapinubeFlow" doc:id="3bba83b1-9168-43dd-8dd5-a954b9f6d152" >
+		<http:listener doc:name="Listener" doc:id="3d0156b2-c68d-409d-9ca9-29900636b8cc" config-ref="HTTP_Listener_config" path="/consumirnube/{n_cuenta_o}/{nom_banco_o}/{tipo_o}/{mon_o}"/>
+		<set-variable value="#[attributes.uriParams.n_cuenta_o]" doc:name="cuenta" doc:id="a84337e9-3066-49f7-81cf-ee62e9ebffcd" variableName="n_cuenta_o" />
+		<set-variable value="#[attributes.uriParams.nom_banco_o]" doc:name="banco" doc:id="04e9a131-9d3d-4a06-991d-3df23a1ed6e9" variableName="nom_banco_o" />
+		<set-variable value="#[attributes.uriParams.tipo_o]" doc:name="tipo" doc:id="cf5871f6-fc2a-4553-9da7-1cc5488d024d" variableName="tipo_o" />
+		<set-variable value="#[attributes.uriParams.mon_o]" doc:name="Monto" doc:id="a669771e-b201-4f58-bb59-331077b3cd43" variableName="mon_o" />
+		<choice doc:name="Choice" doc:id="6bcd4df9-e2a3-4bc9-af9b-51510c8ed110" >
+			<when expression='#[vars.n_cuenta_o !=""]'>
+				<http:request method="GET" doc:name="Request" doc:id="75d2427d-1df5-49dc-a565-be36cdc99636" config-ref="HTTP_Request_configuration1" path='#["/vcuenta/?n_cuenta_o=" ++ vars.n_cuenta_o]' target="salidac"/>
+				<choice doc:name="Choice" doc:id="09b9b746-d4df-4120-8096-bc492e0efbb8" >
+					<when expression='#[vars.salidac.estado == "True" and  vars.salidac.estadomonto &gt; vars.mon_o]'>
+						<choice doc:name="Choice" doc:id="63c46605-547a-47b5-a469-7f11b98a2559">
+							<when expression='#[vars.nom_banco_o != ""]'>
+								<http:request method="GET" doc:name="Request" doc:id="17a76ed0-a85c-408b-9dc7-1ec0d6aed831" config-ref="HTTP_Request_configuration3" path='#["/vbanco/?n_cuenta_o=" ++ vars.n_cuenta_o ++ "&amp;nom_banco_o=" ++ vars.nom_banco_o]' target="bancov"/>
+								<choice doc:name="Choice" doc:id="9257a66d-8d28-4f4b-8494-1fc2894dc370" >
+									<when expression='#[vars.bancov.validabanco == "True"]'>
+										<choice doc:name="Choice" doc:id="d59d1f4f-54c2-4900-9b1e-c929c7f3e4c0">
+			<when expression='#[vars.tipo_o == "Retiro"]'>
+				<logger level="INFO" doc:name="Logger" doc:id="1cadadef-4daf-469c-b1c3-dbd36b1e56bf" message="SE EJECUTA EL RETIRO SEGUN EL PARAMETRO" />
+				<http:request method="GET" doc:name="Request" doc:id="40f3e700-903f-4b55-91c6-d73acb5ded87" config-ref="HTTP_Request_configuration2" path='#[vars.n_cuenta_o ++ "/" ++ vars.nom_banco_o ++ "/" ++ "Retiro" ++ "/" ++ vars.mon_o ++ "/"]' />
+				<logger level="INFO" doc:name="Logger" doc:id="d1eb0f3e-a954-4b4a-9c74-6eabd48587cb" message="#[payload]" />
+			
+</when>
+			<when expression='#[vars.tipo_o== "Deposito"]'>
+				<logger level="INFO" doc:name="Logger" doc:id="84321931-2ee7-41dc-8f31-f7f273a8ce94" message="SE IMPRIME EL METODO DEPOSITO SEGUN LA VARIABLE" />
+				<http:request method="GET" doc:name="Request" doc:id="552ba34d-7713-48a4-91ed-ae42d6901c96" config-ref="HTTP_Request_configuration2" path='#[vars.n_cuenta_o ++ "/" ++ vars.nom_banco_o ++ "/" ++ "Deposito" ++ "/" ++ vars.mon_o ++ "/"]' />
+				<logger level="INFO" doc:name="Copy_of_Logger" doc:id="36122096-de81-45fa-ae65-da75fcc436bd" message="#[payload]" />
+			
+</when>
+			<otherwise>
+				<logger level="INFO" doc:name="Logger" doc:id="9c8967e5-f22d-46f9-a9e0-e645ee65a019" message="SE IMPRIME ERROR" />
+			</otherwise>
+		</choice>
+									</when>
+									<otherwise >
+										<set-payload value="BANCO NO EXISTE" doc:name="Set Payload" doc:id="56be3475-e77e-4634-984f-c83c03dadd80" />
+									</otherwise>
+								</choice>
+								<logger level="INFO" doc:name="Logger" doc:id="fdcd7694-9d20-4602-9b02-91f1aa3ad3d2" message='#["Se muestra valor de cuenta :" ++ vars.salidac.estadomonto]'/>
+							</when>
+							<otherwise >
+								<set-payload value="VALOR VACIO DE BANCO" doc:name="Set Payload" doc:id="129fbfd4-995c-4565-8eba-8b73a8bda703" />
+							</otherwise>
+						</choice>
+					</when>
+					<otherwise >
+						<set-payload value="ERROR DE CUENTA NO EXISTENTE" doc:name="Set Payload" doc:id="2510cbb3-dd04-48c5-88d6-72dfc34e63e4" />
+					</otherwise>
+				</choice>
+			</when>
+			<otherwise >
+				<set-payload value="#[payload]" doc:name="Set Payload" doc:id="069f99ae-0649-42b1-8653-491f8f9ed455" />
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

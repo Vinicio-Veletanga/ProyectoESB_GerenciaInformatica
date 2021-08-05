@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="g" format="json">
+      <types:shape format="weave" example="examples/mule-artifact.json"><![CDATA[%dw 2.0
+
+type g = {| minMuleVersion: String |} {"example": "{\\\"minMuleVersion\\\":\\\"4.3.0\\\"}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#49a1739e-0e79-43ee-ae76-51099d831efe">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="g"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

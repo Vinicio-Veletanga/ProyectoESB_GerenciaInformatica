@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd"> 
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="40c8e959-31b6-493b-a471-8f105a3d7108" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="f9ee1654-8990-47e4-a832-8fc6848b831a" >
+		<http:request-connection host="127.0.0.1" port="8000" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration1" doc:name="HTTP Request configuration" doc:id="837e1042-4dc1-4a33-98ae-9e4436206cfa" >
+		<http:request-connection host="serban.herokuapp.com" protocol="HTTPS"/>
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration2" doc:name="HTTP Request configuration" doc:id="46ac629c-80b8-4d4f-b858-b818cbc6e3c0" >
+		<http:request-connection host="127.0.0.1" port="8000" />
+	</http:request-config>
+	<http:request-config name="REQUEST_VALIDACION" doc:name="HTTP Request configuration" doc:id="3b2cbe61-e83b-498a-a24e-ba26ea91ed56" basePath="/api/v1/sources/exchange/assets/90d40aac-d1d0-45ea-9761-35b50927047a/ejemplo/1.0.5/m/flights" >
+		<http:request-connection host="anypoint.mulesoft.com/mocking/" />
+	</http:request-config>
+	<flow name="Copy_of_consumirapinubeFlow" doc:id="ddaa63c7-6c50-409c-b44b-3a143aa1266e" >
+		<http:listener doc:name="Copy_of_Listener" doc:id="f140e266-ad9a-41d7-bc1a-2db62c88398d" config-ref="HTTP_Listener_config" path="/consumirinterbancaria/{n_cuenta_o}/{n_banco_o}/{n_cuenta_d}/{n_banco_d}/{monto}" />
+		<set-variable value="#[attributes.uriParams.n_cuenta_o]" doc:name="CUENTA ORIGEN" doc:id="910ead7c-7af4-4440-b462-91ff0cc156b6" variableName="n_cuenta_o" />
+		<set-variable value="#[attributes.uriParams.n_banco_o]" doc:name="BANCO ORIGEN" doc:id="76263436-7203-4b96-8cdc-237dc7f2a999" variableName="n_banco_o" />
+		<set-variable value="#[attributes.uriParams.n_cuenta_d]" doc:name="CUENTA DESTINO" doc:id="d99f2b85-f88e-457e-a8fe-454c449bb3e9" variableName="n_cuenta_d" />
+		<set-variable value="#[attributes.uriParams.n_banco_d]" doc:name="BANCO DESTINO" doc:id="24ecbee6-f1ca-4bd0-975b-11c996b7fe1c" variableName="n_banco_d" />
+		<set-variable value="#[attributes.uriParams.monto]" doc:name="MONTO" doc:id="50c2f483-bf4f-471b-ab0b-37ff275df141" variableName="monto" />
+		<http:request method="GET" doc:name="BANCOS REPETIDOS" doc:id="1fc99e87-1988-4e96-8dc1-982fc7a0fddf" config-ref="HTTP_Request_configuration" path='#["/vbancos/?n_banco_o=" ++ vars.n_banco_o ++ "&amp;n_banco_d=" ++ vars.n_banco_d]' target="salidabs" />
+		<choice doc:name="Choice" doc:id="cb07cce7-ace0-40aa-b19d-f3a4847737ba">
+			<when expression="#[vars.n_cuenta_d != Null and vars.n_cuenta_o != Null and vars.n_banco_d != Null and vars.n_banco_o != Null and vars.monto != Null]">
+				<choice doc:name="Copy_of_Choice" doc:id="4e1964ff-c72b-458e-9c36-ee34bf387b92">
+			<when expression='#[vars.salidabs.respuesta == "validos"]'>
+				<logger level="INFO" doc:name="Logger" doc:id="1127d74b-602e-4cfe-b3ee-cbc6a9291100" message="SE EJECUTA CUANDO LOS BANCOS SON DIFERENTES" />
+				<http:request method="GET" doc:name="RETIRO" doc:id="1b214838-0401-4259-8425-395e5e31af16" config-ref="HTTP_Request_configuration2" path='#["dep_ret/" ++ vars.n_cuenta_o ++ "/" ++ vars.n_banco_o ++ "/Retiro/" ++ vars.monto ++ "/"]' target="retiro" />
+				<logger level="INFO" doc:name="Logger" doc:id="99877122-4e8a-4d91-ad49-80e6db239dd1" message="SE EJECUTA EL RETIRO LOCAL" />
+				<set-payload value="#[vars.retiro]" doc:name="Set Payload" doc:id="e8fdfc6c-e9a0-4ec0-9391-54ad72558976" />
+				<http:request method="GET" doc:name="DEPOSITO" doc:id="cf908e08-d096-476a-8514-4788f645d48c" config-ref="HTTP_Request_configuration1" path='#["dep_ret/" ++ vars.n_cuenta_d ++ "/" ++ vars.n_banco_d ++ "/Deposito/" ++ vars.monto ++ "/"]' target="deposito" />
+				<set-payload value="#[vars.deposito]" doc:name="Set Payload" doc:id="86d4e59c-d223-456c-b976-807a1b702687" />
+				<logger level="INFO" doc:name="Logger" doc:id="c6b3ca86-dd0b-4d07-95c3-17dc243c3a28" message="SE EJECUTA EL DEPOSITO EN LA NUBE" />
+			</when>
+			<otherwise>
+				<set-payload value="#[payload]" doc:name="Copy_of_Set Payload" doc:id="8c86d85a-eee5-400e-969e-517d187bdb40" />
+			</otherwise>
+		</choice>
+			</when>
+			<otherwise>
+				<http:request method="GET" doc:name="VALIDACION_FORMATO_ENTRADA" doc:id="6652e49b-9097-4701-855e-15da0ec92b65" path="/" config-ref="REQUEST_VALIDACION" target="val_ent" />
+				<ee:transform doc:name="Transform Message" doc:id="49a1739e-0e79-43ee-ae76-51099d831efe">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	IngresarFormatoDatos: {
+		cuenta_origen: vars.val_ent.cuenta_origen,
+		banco_origen: vars.val_ent.banco_origen,
+		cuenta_destino: vars.val_ent.cuenta_destino,
+		banco_destino: vars.val_ent.banco_destino,
+		monto: vars.val_ent.monto 
+		
+	}
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-payload value="#[payload]" doc:name="Set Payload" doc:id="eb48f546-9535-4067-8ea1-f32d5726b69c" />
+			</otherwise>
+		</choice>
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="d2d2efa5-8e57-4baa-afc3-0ff96e713049" />
+	</flow>
+</mule>

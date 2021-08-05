@@ -1,0 +1,26 @@
+{
+  "sampleData": {
+    "01760ec2-c7ab-471a-a8cb-2dec753319fa": {
+      "vars-tipo": "sample_data/java.dwl"
+    },
+    "00b8be68-6c9f-49c3-9712-787ae28f2d52": {
+      "vars-n_cuenta_o": "sample_data/defaultnulltype.dwl"
+    },
+    "3092ecd7-7e59-45fd-ad86-9edccaeaed88": {
+      "vars-tipo_o": "sample_data/defaultstringtype_4.dwl",
+      "vars-mon": "sample_data/defaultstringtype.dwl",
+      "vars-mon_o": "sample_data/java_2.dwl",
+      "vars-tipo": "sample_data/defaultstringtype_1.dwl",
+      "payload": "sample_data/java_1.dwl",
+      "vars-nom_banco_o": "sample_data/defaultstringtype_2.dwl",
+      "attributes": "sample_data/httprequestattributes.dwl",
+      "vars-n_cuenta_o": "sample_data/defaultstringtype_3.dwl"
+    },
+    "593f152c-29b4-41a8-93ab-fd9418f2f00c": {
+      "payload": "sample_data/header.xml"
+    },
+    "75d2427d-1df5-49dc-a565-be36cdc99636": {
+      "payload": "sample_data/java_3.dwl"
+    }
+  }
+}

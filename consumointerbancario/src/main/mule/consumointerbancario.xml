@@ -27,21 +27,31 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		<set-variable value="#[attributes.uriParams.n_cuenta_d]" doc:name="CUENTA DESTINO" doc:id="d99f2b85-f88e-457e-a8fe-454c449bb3e9" variableName="n_cuenta_d" />
 		<set-variable value="#[attributes.uriParams.n_banco_d]" doc:name="BANCO DESTINO" doc:id="24ecbee6-f1ca-4bd0-975b-11c996b7fe1c" variableName="n_banco_d" />
 		<set-variable value="#[attributes.uriParams.monto]" doc:name="MONTO" doc:id="50c2f483-bf4f-471b-ab0b-37ff275df141" variableName="monto" />
-		<http:request method="GET" doc:name="BANCOS REPETIDOS" doc:id="1fc99e87-1988-4e96-8dc1-982fc7a0fddf" config-ref="HTTP_Request_configuration" path='#["/vbancos/?n_banco_o=" ++ vars.n_banco_o ++ "&amp;n_banco_d=" ++ vars.n_banco_d]' target="salidabs" />
-		<choice doc:name="Choice" doc:id="cb07cce7-ace0-40aa-b19d-f3a4847737ba">
-			<when expression="#[vars.n_cuenta_d != Null and vars.n_cuenta_o != Null and vars.n_banco_d != Null and vars.n_banco_o != Null and vars.monto != Null]">
+		<choice doc:name="VALIDACION CAMPOS VACIOS" doc:id="cb07cce7-ace0-40aa-b19d-f3a4847737ba">
+			<when expression='#[vars.n_cuenta_d !="" and vars.n_cuenta_o != "" and vars.n_banco_d != "" and vars.n_banco_o != "" and vars.monto !=""]'>
+				<http:request method="GET" doc:name="BANCOS REPETIDOS" doc:id="1fc99e87-1988-4e96-8dc1-982fc7a0fddf" config-ref="HTTP_Request_configuration" path='#["/vbancos/?n_banco_o=" ++ vars.n_banco_o ++ "&amp;n_banco_d=" ++ vars.n_banco_d]' target="salidabs" />
+				<logger level="INFO" doc:name="Logger" doc:id="6f7448b7-5fc8-4121-839b-9412db21459f" message="SE EJECUATA SERVICIO VALIDACION BANCO REPETIDO"/>
 				<choice doc:name="Copy_of_Choice" doc:id="4e1964ff-c72b-458e-9c36-ee34bf387b92">
-			<when expression='#[vars.salidabs.respuesta == "validos"]'>
+			<when expression='#[vars.salidabs.respuesta == "validos" and vars.salidabs.tipo == "local"]'>
 				<logger level="INFO" doc:name="Logger" doc:id="1127d74b-602e-4cfe-b3ee-cbc6a9291100" message="SE EJECUTA CUANDO LOS BANCOS SON DIFERENTES" />
-				<http:request method="GET" doc:name="RETIRO" doc:id="1b214838-0401-4259-8425-395e5e31af16" config-ref="HTTP_Request_configuration2" path='#["dep_ret/" ++ vars.n_cuenta_o ++ "/" ++ vars.n_banco_o ++ "/Retiro/" ++ vars.monto ++ "/"]' target="retiro" />
+				<http:request method="GET" doc:name="RETIRO LOCAL" doc:id="1b214838-0401-4259-8425-395e5e31af16" config-ref="HTTP_Request_configuration2" path='#["dep_ret/" ++ vars.n_cuenta_o ++ "/" ++ vars.n_banco_o ++ "/Retiro/" ++ vars.monto ++ "/"]' target="retiro" />
 				<logger level="INFO" doc:name="Logger" doc:id="99877122-4e8a-4d91-ad49-80e6db239dd1" message="SE EJECUTA EL RETIRO LOCAL" />
 				<set-payload value="#[vars.retiro]" doc:name="Set Payload" doc:id="e8fdfc6c-e9a0-4ec0-9391-54ad72558976" />
-				<http:request method="GET" doc:name="DEPOSITO" doc:id="cf908e08-d096-476a-8514-4788f645d48c" config-ref="HTTP_Request_configuration1" path='#["dep_ret/" ++ vars.n_cuenta_d ++ "/" ++ vars.n_banco_d ++ "/Deposito/" ++ vars.monto ++ "/"]' target="deposito" />
-				<set-payload value="#[vars.deposito]" doc:name="Set Payload" doc:id="86d4e59c-d223-456c-b976-807a1b702687" />
-				<logger level="INFO" doc:name="Logger" doc:id="c6b3ca86-dd0b-4d07-95c3-17dc243c3a28" message="SE EJECUTA EL DEPOSITO EN LA NUBE" />
+				<http:request method="GET" doc:name="DEPOSITO WEB" doc:id="cf908e08-d096-476a-8514-4788f645d48c" config-ref="HTTP_Request_configuration1" path='#["dep_ret/" ++ vars.n_cuenta_d ++ "/" ++ vars.n_banco_d ++ "/Deposito/" ++ vars.monto ++ "/"]' target="deposito" />
+				<set-payload value="#[vars.retiro ++ vars.deposito]" doc:name="Respuesta" doc:id="86d4e59c-d223-456c-b976-807a1b702687" />
+				<logger level="INFO" doc:name="SALIDA LOGER  LOCAL-WEB" doc:id="c6b3ca86-dd0b-4d07-95c3-17dc243c3a28" message="SE EJECUTA EL DEPOSITO WEB" />
 			</when>
-			<otherwise>
-				<set-payload value="#[payload]" doc:name="Copy_of_Set Payload" doc:id="8c86d85a-eee5-400e-969e-517d187bdb40" />
+					<when expression='#[vars.salidabs.respuesta == "validos" and vars.salidabs.tipo == "web"]'>
+						<logger level="INFO" doc:name="Logger" doc:id="3c69facd-586d-4d69-a0c4-b23140fcccce" />
+						<http:request method="GET" doc:name="RETIRO WEB" doc:id="499c2c07-6754-4b15-bfb8-1265ea9b9909" config-ref="HTTP_Request_configuration1" path='#["dep_ret/" ++ vars.n_cuenta_o ++ "/" ++ vars.n_banco_o ++ "/Retiro/" ++ vars.monto ++ "/"]' target="retiroweb" />
+						<logger level="INFO" doc:name="logger" doc:id="f7015c5c-a130-4a04-aab3-c1bd9ab1b286" message="SE EJECUTA EL RETIRO WEB" />
+						<set-payload value="#[vars.retiroweb]" doc:name="SALIDA RESPUEST" doc:id="0f5d32b3-fb42-4f11-aee4-2dd0e0c6126e" />
+						<http:request method="GET" doc:name="DEPOSITO LOCAL" doc:id="385774f4-c592-439d-ae11-ba1730ac83d6" config-ref="HTTP_Request_configuration2" path='#["dep_ret/" ++ vars.n_cuenta_d ++ "/" ++ vars.n_banco_d ++ "/Deposito/" ++ vars.monto ++ "/"]' target="deposito" />
+						<set-payload value="#[vars.retiroweb ++ vars.deposito]" doc:name="RESPUESTA  RETIROWEB" doc:id="8fb5966e-977c-4070-a3e5-15356beaffd6" />
+						<logger level="INFO" doc:name="SALIDA LOGER WEB-LOCAL" doc:id="600e8279-207a-4db4-af95-4e897ec84b17" message="SE EJECUTA EL DEPOSITO LOCAL" />
+					</when>
+					<otherwise>
+				<set-payload value="#[payload]" doc:name="ERROR DE CONDICIONES" doc:id="8c86d85a-eee5-400e-969e-517d187bdb40" />
 			</otherwise>
 		</choice>
 			</when>
@@ -67,6 +77,5 @@ output application/json
 				<set-payload value="#[payload]" doc:name="Set Payload" doc:id="eb48f546-9535-4067-8ea1-f32d5726b69c" />
 			</otherwise>
 		</choice>
-		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="d2d2efa5-8e57-4baa-afc3-0ff96e713049" />
 	</flow>
 </mule>
